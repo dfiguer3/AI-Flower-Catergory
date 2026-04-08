@@ -5,6 +5,7 @@
   var METADATA_JSON = 'metadata.json';
 
   var statusEl = document.getElementById('status');
+  var modelFilesInput = document.getElementById('model-files-input');
   var fileInput = document.getElementById('file-input');
   var previewWrap = document.getElementById('preview-wrap');
   var webcamWrap = document.getElementById('webcam-wrap');
@@ -25,6 +26,89 @@
   function setStatus(msg, isError) {
     statusEl.textContent = msg;
     statusEl.className = isError ? 'error' : '';
+  }
+
+  function isHttpLike() {
+    var p = window.location.protocol;
+    return p === 'http:' || p === 'https:';
+  }
+
+  function readFileAsText(file) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () {
+        resolve(r.result);
+      };
+      r.onerror = function () {
+        reject(r.error);
+      };
+      r.readAsText(file);
+    });
+  }
+
+  function applyLoadedModel(m, meta) {
+    if (model) {
+      model.dispose();
+    }
+    model = m;
+    labels = meta.labels || [];
+    if (meta.imageSize) imageSize = meta.imageSize;
+
+    setStatus('Model ready. Upload an image or start the webcam.');
+    fileInput.disabled = false;
+    btnStart.disabled = false;
+    stopWebcam();
+  }
+
+  function loadFromFiles(fileList) {
+    if (!fileList || fileList.length === 0) return;
+
+    var modelJson = null;
+    var weightsBin = null;
+    var metaJson = null;
+
+    for (var i = 0; i < fileList.length; i++) {
+      var name = fileList[i].name.toLowerCase();
+      if (name === 'model.json') modelJson = fileList[i];
+      else if (name === 'weights.bin') weightsBin = fileList[i];
+      else if (name === 'metadata.json') metaJson = fileList[i];
+    }
+
+    if (!modelJson || !weightsBin || !metaJson) {
+      setStatus(
+        'Select all three files: model.json, weights.bin, and metadata.json (names must match exactly).',
+        true
+      );
+      return;
+    }
+
+    setStatus('Loading model from files…');
+
+    readFileAsText(metaJson)
+      .then(function (text) {
+        var meta = JSON.parse(text);
+        return tf.loadLayersModel(tf.io.browserFiles([modelJson, weightsBin])).then(function (m) {
+          return { m: m, meta: meta };
+        });
+      })
+      .then(function (o) {
+        applyLoadedModel(o.m, o.meta);
+      })
+      .catch(function (err) {
+        setStatus('Failed to load model from files: ' + err.message, true);
+      });
+  }
+
+  function loadFromHttp() {
+    return Promise.all([
+      fetch(METADATA_JSON).then(function (r) {
+        if (!r.ok) throw new Error('metadata.json HTTP ' + r.status);
+        return r.json();
+      }),
+      tf.loadLayersModel(MODEL_JSON),
+    ]).then(function (results) {
+      applyLoadedModel(results[1], results[0]);
+    });
   }
 
   /** Teachable Machine image model preprocessing (matches @teachablemachine/image). */
@@ -164,30 +248,28 @@
     img.src = url;
   });
 
+  modelFilesInput.addEventListener('change', function () {
+    loadFromFiles(modelFilesInput.files);
+  });
+
   btnStart.addEventListener('click', startWebcam);
   btnStop.addEventListener('click', stopWebcam);
 
-  Promise.all([
-    fetch(METADATA_JSON).then(function (r) {
-      if (!r.ok) throw new Error('metadata.json HTTP ' + r.status);
-      return r.json();
-    }),
-    tf.loadLayersModel(MODEL_JSON),
-  ])
-    .then(function (results) {
-      var meta = results[0];
-      model = results[1];
-      labels = meta.labels || [];
-      if (meta.imageSize) imageSize = meta.imageSize;
-
-      setStatus('Model ready. Upload an image or start the webcam.');
-      fileInput.disabled = false;
-      btnStart.disabled = false;
-    })
-    .catch(function (err) {
+  if (isHttpLike()) {
+    setStatus('Loading model…');
+    loadFromHttp().catch(function (err) {
       setStatus(
-        'Failed to load model or metadata. Use a local server (not file://). ' + err.message,
+        'Could not load from server: ' +
+          err.message +
+          '. Use “Load model files” below, or check that model files are next to index.html.',
         true
       );
     });
+  } else {
+    setStatus(
+      'Opened as ' +
+        window.location.protocol +
+        '// — select model.json, weights.bin, and metadata.json under Load model files.'
+    );
+  }
 })();

@@ -94,11 +94,22 @@
   <main>
     <h1>Flower classifier</h1>
     <p class="notice">
-      <strong>Local server required.</strong> Browsers block loading <code>weights.bin</code> from <code>file://</code>
-      (CORS). Run a static server in this folder, e.g. <code>npx serve</code> or VS Code “Live Server”, then open the URL it prints.
+      <strong>Opening as <code>file://</code>?</strong> Use <strong>Load model files</strong> below and pick
+      <code>model.json</code>, <code>weights.bin</code>, and <code>metadata.json</code> from this folder.
+      Or run a static server (e.g. <code>npx serve</code>, VS Code “Live Server”) and open the <code>http://</code> URL so the model loads automatically.
     </p>
 
-    <p id="status">Loading model…</p>
+    <p id="status">…</p>
+
+    <section>
+      <h2>Load model files</h2>
+      <p style="margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--muted);">
+        Choose all three files from the same folder (Ctrl+click or Shift+click to select multiple).
+      </p>
+      <div class="row">
+        <input type="file" id="model-files-input" accept=".json,.bin,application/json,application/octet-stream" multiple>
+      </div>
+    </section>
 
     <section>
       <h2>Upload image</h2>
