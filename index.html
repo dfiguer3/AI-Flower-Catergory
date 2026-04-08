@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flower classifier — Teachable Machine</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --accent: #7cb342;
+      --danger: #ef5350;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, Segoe UI, Roboto, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    main {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+    h1 { font-size: 1.35rem; font-weight: 600; margin: 0 0 0.5rem; }
+    .notice {
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      border-left: 3px solid var(--accent);
+    }
+    .notice strong { color: var(--text); }
+    section {
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    section h2 { font-size: 0.95rem; margin: 0 0 0.75rem; font-weight: 600; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    input[type="file"] { font-size: 0.85rem; max-width: 100%; }
+    button {
+      background: var(--accent);
+      color: #111;
+      border: none;
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button.secondary { background: #3d4f63; color: var(--text); }
+    #preview-wrap { margin-top: 0.75rem; }
+    #preview-wrap img, #webcam-wrap video {
+      max-width: 100%;
+      border-radius: 6px;
+      display: block;
+    }
+    #webcam-wrap { margin-top: 0.75rem; }
+    #status { font-size: 0.875rem; color: var(--muted); min-height: 1.5em; }
+    #status.error { color: var(--danger); }
+    .top-pred {
+      font-size: 1.1rem;
+      margin: 0.5rem 0 1rem;
+    }
+    .top-pred span { color: var(--accent); font-weight: 600; }
+    .bars { display: flex; flex-direction: column; gap: 0.5rem; }
+    .bar-row { display: grid; grid-template-columns: 9rem 1fr 3.5rem; gap: 0.5rem; align-items: center; font-size: 0.8rem; }
+    .bar-row .track {
+      height: 8px;
+      background: #2d3a4a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .bar-row .fill {
+      height: 100%;
+      background: linear-gradient(90deg, #558b2f, var(--accent));
+      border-radius: 4px;
+      transition: width 0.15s ease;
+    }
+    .bar-row .pct { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Flower classifier</h1>
+    <p class="notice">
+      <strong>Local server required.</strong> Browsers block loading <code>weights.bin</code> from <code>file://</code>
+      (CORS). Run a static server in this folder, e.g. <code>npx serve</code> or VS Code “Live Server”, then open the URL it prints.
+    </p>
+
+    <p id="status">Loading model…</p>
+
+    <section>
+      <h2>Upload image</h2>
+      <div class="row">
+        <input type="file" id="file-input" accept="image/*" disabled>
+      </div>
+      <div id="preview-wrap"></div>
+    </section>
+
+    <section>
+      <h2>Webcam</h2>
+      <div class="row">
+        <button type="button" id="btn-webcam-start" disabled>Start webcam</button>
+        <button type="button" id="btn-webcam-stop" class="secondary" disabled>Stop</button>
+      </div>
+      <div id="webcam-wrap"></div>
+    </section>
+
+    <section>
+      <h2>Predictions</h2>
+      <p class="top-pred" id="top-pred">—</p>
+      <div class="bars" id="bars"></div>
+    </section>
+  </main>
+
+  <!-- TensorFlow.js version aligned with metadata.json (tfjsVersion 1.7.4) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.7.4/dist/tf.min.js"></script>
+  <script defer src="app.js"></script>
+</body>
+</html>
